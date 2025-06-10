@@ -1,0 +1,12 @@
+{
+  "name": "portal-backend",
+  "version": "1.0.0",
+  "description": "The Backend For the Pixelate Portal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
