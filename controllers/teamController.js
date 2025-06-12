@@ -118,3 +118,52 @@ export const leaveTeam = async (req, res) => {
     res.status(500).json({ error: "Failed to leave team" });
   }
 };
+
+export const kickMember = async (req, res) => {
+  const { leaderRegId, memberRegId } = req.body;
+
+  try {
+    const leader = await User.findOne({ regId: leaderRegId.toUpperCase() });
+    const member = await User.findOne({ regId: memberRegId.toUpperCase() });
+
+    if (!leader || !leader.isLeader || !leader.teamId) {
+      return res
+        .status(403)
+        .json({ error: "Only a team leader can kick members" });
+    }
+
+    if (
+      !member ||
+      !member.teamId ||
+      member.teamId.toString() !== leader.teamId.toString()
+    ) {
+      return res.status(400).json({ error: "Member not in the same team" });
+    }
+
+    if (leader._id.toString() === member._id.toString()) {
+      return res.status(400).json({ error: "Leader cannot kick themselves" });
+    }
+
+    const team = await Team.findById(leader.teamId);
+
+    if (team.members.length <= 2) {
+      return res
+        .status(400)
+        .json({ error: "Team must have at least 2 members" });
+    }
+
+    // Remove member
+    team.members = team.members.filter(
+      (memberId) => memberId.toString() !== member._id.toString()
+    );
+    await team.save();
+
+    member.teamId = null;
+    await member.save();
+
+    res.status(200).json({ message: "Member kicked successfully" });
+  } catch (err) {
+    console.error("Kick member error:", err.message);
+    res.status(500).json({ error: "Failed to kick member" });
+  }
+};
