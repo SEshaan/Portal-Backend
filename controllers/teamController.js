@@ -167,3 +167,48 @@ export const kickMember = async (req, res) => {
     res.status(500).json({ error: "Failed to kick member" });
   }
 };
+
+export const transferLeadership = async (req, res) => {
+  const { currentLeaderRegId, newLeaderRegId } = req.body;
+
+  try {
+    const currentLeader = await User.findOne({
+      regId: currentLeaderRegId.toUpperCase(),
+    });
+    const newLeader = await User.findOne({
+      regId: newLeaderRegId.toUpperCase(),
+    });
+
+    if (!currentLeader || !currentLeader.isLeader || !currentLeader.teamId) {
+      return res
+        .status(403)
+        .json({ error: "Only the current leader can transfer leadership" });
+    }
+
+    if (
+      !newLeader ||
+      !newLeader.teamId ||
+      newLeader.teamId.toString() !== currentLeader.teamId.toString()
+    ) {
+      return res
+        .status(400)
+        .json({ error: "New leader must be in the same team" });
+    }
+
+    if (currentLeader._id.toString() === newLeader._id.toString()) {
+      return res.status(400).json({ error: "You are already the leader" });
+    }
+
+    // Transfer leadership
+    currentLeader.isLeader = false;
+    newLeader.isLeader = true;
+
+    await currentLeader.save();
+    await newLeader.save();
+
+    res.status(200).json({ message: "Leadership transferred successfully" });
+  } catch (err) {
+    console.error("Transfer error:", err.message);
+    res.status(500).json({ error: "Failed to transfer leadership" });
+  }
+};
