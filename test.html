@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Sign-In Domain Restriction</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+    <div id="g_id_signin"></div>
+
+    <script>
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: "387776780566-15h89a7jmgfnkdcjhujlvro38fefa1uk.apps.googleusercontent.com",
+                callback: googleCallback,
+                auto_select: true,
+                ux_mode: "popout",
+                hosted_domain: "vitstudent.ac.in"
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById("g_id_signin"),
+                {
+                    type: "standard",
+                    shape: "pill",
+                    theme: "outline",
+                    text: "signin_with",
+                    size: "large",
+                    logo_alignment: "left"
+                }
+            );
+        }
+
+        function googleCallback(response) {
+            console.log("Google Sign-In response:", response);
+            fetch('./google/callback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ credential: response.credential })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Server response:', data);
+                })
+                .catch(error => {
+                    console.error('Error posting to backend:', error);
+                });
+        }
+    </script>
+</body>
+
+</html>
