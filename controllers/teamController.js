@@ -246,3 +246,33 @@ export const deleteTeam = async (req, res) => {
     res.status(500).json({ error: "Failed to delete team" });
   }
 };
+
+export const getTeamInfo = async (req, res) => {
+  const { regId } = req.params;
+
+  try {
+    const user = await User.findOne({ regId: regId.toUpperCase() });
+
+    if (!user || !user.teamId) {
+      return res.status(404).json({ error: "User not in a team" });
+    }
+
+    const team = await Team.findById(user.teamId).populate(
+      "members",
+      "name regId isLeader"
+    );
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    res.status(200).json({
+      teamName: team.name,
+      teamId: team._id,
+      members: team.members,
+    });
+  } catch (err) {
+    console.error("Team info error:", err.message);
+    res.status(500).json({ error: "Failed to fetch team info" });
+  }
+};
