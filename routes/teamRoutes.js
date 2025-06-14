@@ -22,6 +22,5 @@ router.post("/kick", requireAuth, requireLeader, kickMember);
 router.post("/transfer-leadership", requireAuth, requireLeader, transferLeadership);
 router.post("/delete", requireAuth, requireLeader, deleteTeam);
 router.get("/info/:regId", requireAuth, getTeamInfo);
-//this one is crazy coz its dynamic shieeeet
 //accepts a regno. as a param and then it returns the
 export default router;
