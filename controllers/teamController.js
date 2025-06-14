@@ -212,3 +212,37 @@ export const transferLeadership = async (req, res) => {
     res.status(500).json({ error: "Failed to transfer leadership" });
   }
 };
+
+export const deleteTeam = async (req, res) => {
+  const { leaderRegId } = req.body;
+
+  try {
+    const leader = await User.findOne({ regId: leaderRegId.toUpperCase() });
+
+    if (!leader || !leader.isLeader || !leader.teamId) {
+      return res
+        .status(403)
+        .json({ error: "Only the team leader can delete the team" });
+    }
+
+    const team = await Team.findById(leader.teamId).populate("members");
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    // Remove teamId from all members
+    for (const member of team.members) {
+      member.teamId = null;
+      member.isLeader = false;
+      await member.save();
+    }
+
+    await Team.findByIdAndDelete(team._id);
+
+    res.status(200).json({ message: "Team deleted successfully" });
+  } catch (err) {
+    console.error("Delete team error:", err.message);
+    res.status(500).json({ error: "Failed to delete team" });
+  }
+};
