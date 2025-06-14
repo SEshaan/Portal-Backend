@@ -4,6 +4,10 @@ then make your changes in a branch to avoid conflicts
 hmu for the env variables 
 (ts will not work without the env variables)
 
+big thanks to chatgpt for the documentation
+thanks to all the stackoverflow gods for such detailed answers
+and thanks for explaining the difference between PATCH and POST
+
 ---
 
 # 🚀 Hackathon Portal Backend API Documentation
