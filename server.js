@@ -8,6 +8,7 @@ import teamRoutes from "./routes/teamRoutes.js";
 import oauthRoutes from "./routes/oauthRoutes.js";
 import { fileURLToPath } from "url";
 import path from "path";
+import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ mongoose
     console.error("MongoDB connection failed:", err.message); 
   });
 
+//when connecting to mongo takes more lines than the entire admin dashboard
 app.use("/api/team", teamRoutes);
-
+app.use("/api/admin", adminRoutes);
 app.use("/google",oauthRoutes);
