@@ -20,13 +20,13 @@ app.use(express.json());
 app.use(cookieParser()); 
 
 
-// app.use(
-//   cors({
-//     //TODO : Plug it to the frontend
-//     origin: "http://localhost:3000", // guys this is going to be the frontend port btw 
-//     credentials: true, 
-//   })
-// );
+app.use(
+  cors({
+    //TODO : Plug it to the frontend
+    origin: "http://localhost:3000", // guys this is going to be the frontend port btw 
+    credentials: true, 
+  })
+);
 
 app.use("/api/auth", authRoutes);
 
