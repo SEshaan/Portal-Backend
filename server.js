@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
 
@@ -38,5 +39,6 @@ mongoose
   .catch((err) => {
     console.error("MongoDB connection failed:", err.message);
   });
-
+//when connecting to mongo takes more lines than the entire admin dashboard
 app.use("/api/team", teamRoutes);
+app.use("/api/admin", adminRoutes);
