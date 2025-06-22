@@ -77,17 +77,14 @@ export const joinTeam = async (req, res) => {
 };
 
 export const leaveTeam = async (req, res) => {
-  const { regId } = req.body;
+  const user = req.user; // ✅ fetched from token by requireAuth
 
   try {
-    const user = await User.findOne({ regId: regId.toUpperCase() });
-
     if (!user || !user.teamId) {
       return res.status(400).json({ error: "User not in a team" });
     }
 
     const team = await Team.findById(user.teamId);
-
     if (!team) {
       return res.status(404).json({ error: "Team not found" });
     }
@@ -214,11 +211,9 @@ export const transferLeadership = async (req, res) => {
 };
 
 export const deleteTeam = async (req, res) => {
-  const { leaderRegId } = req.body;
+  const leader = req.user; // Fetched from JWT by requireAuth
 
   try {
-    const leader = await User.findOne({ regId: leaderRegId.toUpperCase() });
-
     if (!leader || !leader.isLeader || !leader.teamId) {
       return res
         .status(403)
@@ -231,12 +226,14 @@ export const deleteTeam = async (req, res) => {
       return res.status(404).json({ error: "Team not found" });
     }
 
-    // Remove teamId from all members
-    for (const member of team.members) {
-      member.teamId = null;
-      member.isLeader = false;
-      await member.save();
-    }
+    // Remove teamId and isLeader from all members
+    await Promise.all(
+      team.members.map(async (member) => {
+        member.teamId = null;
+        member.isLeader = false;
+        await member.save();
+      })
+    );
 
     await Team.findByIdAndDelete(team._id);
 
