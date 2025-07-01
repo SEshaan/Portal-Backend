@@ -2,22 +2,21 @@ import Team from "../models/Team.js";
 import User from "../models/User.js";
 
 export const createTeam = async (req, res) => {
-  const { teamName, regId } = req.body;
+  const { teamName } = req.body;
+  const user = req.user;
 
   try {
-    const user = await User.findOne({ regId: regId.toUpperCase() });
-
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(401).json({ message: "Not authenticated" });
     }
 
     if (user.teamId) {
-      return res.status(400).json({ error: "You are already in a team" });
+      return res.status(400).json({ message: "You are already in a team" });
     }
 
     const existingTeam = await Team.findOne({ name: teamName });
     if (existingTeam) {
-      return res.status(400).json({ error: "Team name already taken" });
+      return res.status(400).json({ message: "Team name already taken" });
     }
 
     const newTeam = await Team.create({
@@ -36,109 +35,103 @@ export const createTeam = async (req, res) => {
     });
   } catch (err) {
     console.error("Create team error:", err.message);
-    res.status(500).json({ error: "Failed to create team" });
+    res.status(500).json({ message: "Failed to create team" });
   }
 };
 
 export const joinTeam = async (req, res) => {
-  const { teamName, regId } = req.body;
+  const { teamName } = req.body;
+  const user = req.user;
 
   try {
-    const user = await User.findOne({ regId: regId.toUpperCase() });
-
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(401).json({ message: "Not authenticated" });
     }
 
     if (user.teamId) {
-      return res.status(400).json({ error: "You are already in a team" });
+      return res.status(400).json({ message: "You are already in a team" });
     }
 
     const team = await Team.findOne({ name: teamName });
 
     if (!team) {
-      return res.status(404).json({ error: "Team not found" });
+      return res.status(404).json({ message: "Team not found" });
     }
+
     if (team.members.length >= 4) {
-      return res.status(400).json({ error: "Team is full. (max 4 members)" });
+      return res.status(400).json({ message: "Team is full. (max 4 members)" });
     }
 
     team.members.push(user._id);
-    await team.save();
-
     user.teamId = team._id;
-    await user.save();
+    await Promise.all([team.save(), user.save()]);
 
     res.status(200).json({ message: "Joined team successfully" });
   } catch (err) {
     console.error("Join team error:", err.message);
-    res.status(500).json({ error: "Failed to join team" });
+    res.status(500).json({ message: "Failed to join team" });
   }
 };
 
 export const leaveTeam = async (req, res) => {
-  const user = req.user; // ✅ fetched from token by requireAuth
+  const user = req.user;
 
   try {
     if (!user || !user.teamId) {
-      return res.status(400).json({ error: "User not in a team" });
+      return res.status(400).json({ message: "User not in a team" });
     }
 
     const team = await Team.findById(user.teamId);
     if (!team) {
-      return res.status(404).json({ error: "Team not found" });
+      return res.status(404).json({ message: "Team not found" });
     }
 
     if (team.members.length <= 2) {
       return res
         .status(400)
-        .json({ error: "A team must have at least 2 members" });
+        .json({ message: "A team must have at least 2 members" });
     }
 
     if (user.isLeader) {
-      return res.status(400).json({ error: "Leader cannot leave." });
+      return res.status(400).json({ message: "Leader cannot leave." });
     }
 
-    // Remove user from team
     team.members = team.members.filter(
       (memberId) => memberId.toString() !== user._id.toString()
     );
-    await team.save();
-
-    // Clear user's team info
     user.teamId = null;
-    await user.save();
+    await Promise.all([team.save(), user.save()]);
 
     res.status(200).json({ message: "Successfully left the team" });
   } catch (err) {
     console.error("Leave team error:", err.message);
-    res.status(500).json({ error: "Failed to leave team" });
+    res.status(500).json({ message: "Failed to leave team" });
   }
 };
 
 export const kickMember = async (req, res) => {
-  const { leaderRegId, memberRegId } = req.body;
+  const { memberRegId } = req.body;
+  const leader = req.user;
 
   try {
-    const leader = await User.findOne({ regId: leaderRegId.toUpperCase() });
-    const member = await User.findOne({ regId: memberRegId.toUpperCase() });
-
     if (!leader || !leader.isLeader || !leader.teamId) {
       return res
         .status(403)
-        .json({ error: "Only a team leader can kick members" });
+        .json({ message: "Only a team leader can kick members" });
     }
+
+    const member = await User.findOne({ regId: memberRegId.toUpperCase() });
 
     if (
       !member ||
       !member.teamId ||
       member.teamId.toString() !== leader.teamId.toString()
     ) {
-      return res.status(400).json({ error: "Member not in the same team" });
+      return res.status(400).json({ message: "Member not in the same team" });
     }
 
     if (leader._id.toString() === member._id.toString()) {
-      return res.status(400).json({ error: "Leader cannot kick themselves" });
+      return res.status(400).json({ message: "Leader cannot kick themselves" });
     }
 
     const team = await Team.findById(leader.teamId);
@@ -146,41 +139,36 @@ export const kickMember = async (req, res) => {
     if (team.members.length <= 2) {
       return res
         .status(400)
-        .json({ error: "Team must have at least 2 members" });
+        .json({ message: "Team must have at least 2 members" });
     }
 
-    // Remove member
     team.members = team.members.filter(
       (memberId) => memberId.toString() !== member._id.toString()
     );
-    await team.save();
-
     member.teamId = null;
-    await member.save();
+    await Promise.all([team.save(), member.save()]);
 
     res.status(200).json({ message: "Member kicked successfully" });
   } catch (err) {
     console.error("Kick member error:", err.message);
-    res.status(500).json({ error: "Failed to kick member" });
+    res.status(500).json({ message: "Failed to kick member" });
   }
 };
 
 export const transferLeadership = async (req, res) => {
-  const { currentLeaderRegId, newLeaderRegId } = req.body;
+  const { newLeaderRegId } = req.body;
+  const currentLeader = req.user;
 
   try {
-    const currentLeader = await User.findOne({
-      regId: currentLeaderRegId.toUpperCase(),
-    });
-    const newLeader = await User.findOne({
-      regId: newLeaderRegId.toUpperCase(),
-    });
-
     if (!currentLeader || !currentLeader.isLeader || !currentLeader.teamId) {
       return res
         .status(403)
-        .json({ error: "Only the current leader can transfer leadership" });
+        .json({ message: "Only the current leader can transfer leadership" });
     }
+
+    const newLeader = await User.findOne({
+      regId: newLeaderRegId.toUpperCase(),
+    });
 
     if (
       !newLeader ||
@@ -189,44 +177,40 @@ export const transferLeadership = async (req, res) => {
     ) {
       return res
         .status(400)
-        .json({ error: "New leader must be in the same team" });
+        .json({ message: "New leader must be in the same team" });
     }
 
     if (currentLeader._id.toString() === newLeader._id.toString()) {
-      return res.status(400).json({ error: "You are already the leader" });
+      return res.status(400).json({ message: "You are already the leader" });
     }
 
-    // Transfer leadership
     currentLeader.isLeader = false;
     newLeader.isLeader = true;
-
-    await currentLeader.save();
-    await newLeader.save();
+    await Promise.all([currentLeader.save(), newLeader.save()]);
 
     res.status(200).json({ message: "Leadership transferred successfully" });
   } catch (err) {
     console.error("Transfer error:", err.message);
-    res.status(500).json({ error: "Failed to transfer leadership" });
+    res.status(500).json({ message: "Failed to transfer leadership" });
   }
 };
 
 export const deleteTeam = async (req, res) => {
-  const leader = req.user; // Fetched from JWT by requireAuth
+  const leader = req.user;
 
   try {
     if (!leader || !leader.isLeader || !leader.teamId) {
       return res
         .status(403)
-        .json({ error: "Only the team leader can delete the team" });
+        .json({ message: "Only the team leader can delete the team" });
     }
 
     const team = await Team.findById(leader.teamId).populate("members");
 
     if (!team) {
-      return res.status(404).json({ error: "Team not found" });
+      return res.status(404).json({ message: "Team not found" });
     }
 
-    // Remove teamId and isLeader from all members
     await Promise.all(
       team.members.map(async (member) => {
         member.teamId = null;
@@ -240,18 +224,16 @@ export const deleteTeam = async (req, res) => {
     res.status(200).json({ message: "Team deleted successfully" });
   } catch (err) {
     console.error("Delete team error:", err.message);
-    res.status(500).json({ error: "Failed to delete team" });
+    res.status(500).json({ message: "Failed to delete team" });
   }
 };
 
 export const getTeamInfo = async (req, res) => {
-  const { regId } = req.params;
+  const user = req.user;
 
   try {
-    const user = await User.findOne({ regId: regId.toUpperCase() });
-
     if (!user || !user.teamId) {
-      return res.status(404).json({ error: "User not in a team" });
+      return res.status(404).json({ message: "You are not in a team" });
     }
 
     const team = await Team.findById(user.teamId).populate(
@@ -260,7 +242,7 @@ export const getTeamInfo = async (req, res) => {
     );
 
     if (!team) {
-      return res.status(404).json({ error: "Team not found" });
+      return res.status(404).json({ message: "Team not found" });
     }
 
     res.status(200).json({
@@ -270,6 +252,72 @@ export const getTeamInfo = async (req, res) => {
     });
   } catch (err) {
     console.error("Team info error:", err.message);
-    res.status(500).json({ error: "Failed to fetch team info" });
+    res.status(500).json({ message: "Failed to fetch team info" });
+  }
+};
+
+export const updateSubmission = async (req, res) => {
+  const teamId = req.params.id;
+  const { link } = req.body;
+  const userId = req.user._id;
+
+  try {
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ message: "Team not found" });
+
+    const isMember = team.members.some(
+      (m) => m.toString() === userId.toString()
+    );
+    if (!isMember) {
+      return res.status(403).json({ message: "You are not part of this team" });
+    }
+
+    team.submissionLink = link;
+    await team.save();
+
+    res.status(200).json({ message: "Submission link updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getMyTeam = async (req, res) => {
+  const user = req.user;
+
+  try {
+    if (!user.teamId) {
+      return res.status(404).json({ message: "You are not in any team" });
+    }
+
+    const team = await Team.findById(user.teamId).populate(
+      "members",
+      "name regId isLeader"
+    );
+
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    const isMember = team.members.some(
+      (member) => member._id.toString() === user._id.toString()
+    );
+
+    if (!isMember) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to access this team" });
+    }
+
+    res.status(200).json({
+      teamName: team.name,
+      teamId: team._id,
+      leaderId: team.leader,
+      members: team.members,
+      submissionLink: team.submissionLink,
+    });
+  } catch (err) {
+    console.error("getMyTeam error:", err.message);
+    res.status(500).json({ message: "Failed to fetch team info" });
   }
 };

@@ -14,6 +14,7 @@ const teamSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    submissionLink: { type: String, default: null },
   },
   { timestamps: true }
 );

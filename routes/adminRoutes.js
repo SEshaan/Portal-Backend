@@ -6,11 +6,11 @@ import {
   toggleAdminStatus,
   removeUserFromTeam,
 } from "../controllers/adminController.js";
-import { requireAuth, requireAdmin } from "../middleware/authMiddleware.js";
+import { protect, requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.use(requireAuth, requireAdmin); 
+router.use(protect, requireAdmin); 
 // ^^ remember kids, protection is important
 
 router.get("/teams", getAllTeams);

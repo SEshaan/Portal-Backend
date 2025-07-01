@@ -9,12 +9,23 @@ import oauthRoutes from "./routes/oauthRoutes.js";
 import { fileURLToPath } from "url";
 import path from "path";
 import adminRoutes from "./routes/adminRoutes.js";
+import rateLimit from "express-rate-limit";
+
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 80;
 
+
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, 
+  max: 30, // 1 req every 2s because kids be spamming buttons chee
+  message: "Too many requests. Chill out.",
+});
+
+app.use("/api/", apiLimiter);
 
 app.use(express.json()); 
 app.use(cookieParser()); 

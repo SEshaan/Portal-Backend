@@ -7,21 +7,25 @@ import {
   transferLeadership,
   deleteTeam,
   getTeamInfo,
+  updateSubmission,
+  getMyTeam
 } from "../controllers/teamController.js";
-import { requireLeader, requireAuth } from "../middleware/authMiddleware.js";
+import { requireLeader, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-router.post("/create", requireAuth, createTeam);
-router.post("/join", requireAuth, joinTeam);
-router.post("/leave", requireAuth, leaveTeam);
-router.post("/kick", requireAuth, requireLeader, kickMember);
+router.post("/create", protect, createTeam);
+router.post("/join", protect, joinTeam);
+router.post("/leave", protect, leaveTeam);
+router.post("/kick", protect, requireLeader, kickMember);
 router.post(
   "/transfer-leadership",
-  requireAuth,
+  protect,
   requireLeader,
   transferLeadership
 );
-router.post("/delete", requireAuth, requireLeader, deleteTeam);
-router.get("/info/:regId", requireAuth, getTeamInfo);
+router.post("/delete", protect, requireLeader, deleteTeam);
+router.get("/info/:regId", protect, getTeamInfo);
 //accepts a regno. as a param and then it returns the
+router.patch("/:id/submission", protect, requireLeader, updateSubmission);
+router.get("/me",protect,getMyTeam);
 export default router;

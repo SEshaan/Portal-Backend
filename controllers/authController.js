@@ -9,7 +9,7 @@ export const register = async (req, res) => {
 
   const regIdPattern = /^[0-9]{2}[A-Z]{3}[0-9]{4}$/;
   if (!regIdPattern.test(regId)) {
-    return res.status(400).json({ error: "Invalid registration ID format" });
+    return res.status(400).json({ message: "Invalid registration ID format" });
   }
 
   try {
@@ -17,7 +17,7 @@ export const register = async (req, res) => {
     if (existingUser) {
       return res
         .status(400)
-        .json({ error: "User already registered with this ID" });
+        .json({ message: "User already registered with this ID" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -51,11 +51,14 @@ export const register = async (req, res) => {
           name: user.name,
           regId: user.regId,
           email: user.email,
+          isAdmin: user.isAdmin,
+          isLeader: user.isLeader,
+          teamId: user.teamId,
         },
       });
   } catch (err) {
     console.error("Registration error:", err.message);
-    res.status(500).json({ error: "Registration failed" });
+    res.status(500).json({ message: "Registration failed" });
   }
 };
 
@@ -66,10 +69,10 @@ export const login = async (req, res) => {
     regId = regId.toUpperCase();
 
     const user = await User.findOne({ regId });
-    if (!user) return res.status(400).json({ error: "User not found" });
+    if (!user) return res.status(400).json({ message: "User not found" });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ error: "Invalid credentials" });
+    if (!match) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "3d",
@@ -89,11 +92,14 @@ export const login = async (req, res) => {
           name: user.name,
           regId: user.regId,
           email: user.email,
+          isAdmin: user.isAdmin,
+          isLeader: user.isLeader,
+          teamId: user.teamId,
         },
       });
   } catch (err) {
     console.error("Login error:", err.message);
-    res.status(500).json({ error: "Login failed" });
+    res.status(500).json({ message: "Login failed" });
   }
 };
 
