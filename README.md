@@ -71,17 +71,28 @@ Clears the JWT cookie.
 
 ## 👥 Team Routes
 
-> All team routes require authentication (`requireAuth` middleware)
+> All team routes require authentication (`protect` middleware).
 
 ### 🏗️ Create Team
 
-`POST /team/create`
+`POST /api/team/create`
+
+Creates a new team. The user who creates the team automatically becomes the leader.
+
 **Body:**
 
 ```json
 {
-  "teamName": "ByteHunters",
-  "regId": "24BCE0000"
+  "teamName": "The A-Team"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Team created successfully",
+  "teamId": "60d5f2b4a6d2f1a2b8c0d3e4"
 }
 ```
 
@@ -89,13 +100,23 @@ Clears the JWT cookie.
 
 ### ➕ Join Team
 
-`POST /team/join`
+`POST /api/team/join`
+
+Joins an existing team.
+
 **Body:**
 
 ```json
 {
-  "teamName": "ByteHunters",
-  "regId": "24BEC0002"
+  "teamName": "The A-Team"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Joined team successfully"
 }
 ```
 
@@ -103,12 +124,15 @@ Clears the JWT cookie.
 
 ### 🚪 Leave Team
 
-`POST /team/leave`
-**Body:**
+`POST /api/team/leave`
+
+Leaves the current team. The user is identified by the JWT token.
+
+**Response:**
 
 ```json
 {
-  "regId": "24BEC0002"
+  "message": "Successfully left the team"
 }
 ```
 
@@ -116,13 +140,23 @@ Clears the JWT cookie.
 
 ### ❌ Kick Member *(Leader Only)*
 
-`POST /team/kick`
+`POST /api/team/kick`
+
+Kicks a member from the team. This action can only be performed by the team leader.
+
 **Body:**
 
 ```json
 {
-  "leaderRegId": "24BCE0000",
-  "memberRegId": "24BCE0002"
+  "memberRegId": "24BCE0001"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Member kicked successfully"
 }
 ```
 
@@ -130,13 +164,23 @@ Clears the JWT cookie.
 
 ### 🔁 Transfer Leadership *(Leader Only)*
 
-`POST /team/transfer-leadership`
+`POST /api/team/transfer-leadership`
+
+Transfers leadership to another member of the team.
+
 **Body:**
 
 ```json
 {
-  "currentLeaderRegId": "24BCE0000",
-  "newLeaderRegId": "24BCE0002"
+  "newLeaderRegId": "24BCE0001"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Leadership transferred successfully"
 }
 ```
 
@@ -144,27 +188,107 @@ Clears the JWT cookie.
 
 ### 🗑️ Delete Team *(Leader Only)*
 
-`POST /team/delete`
-**Body:**
+`POST /api/team/delete`
+
+Deletes the entire team. This action can only be performed by the team leader.
+
+**Response:**
 
 ```json
 {
-  "leaderRegId": "24BCE0000"
+  "message": "Team deleted successfully"
 }
 ```
 
 ---
 
-### 🔍 Get Team Info
+### ℹ️ Get Team Info by Registration ID
 
-`GET /team/info/:regId`
-Returns info for the team the given user belongs to.
+`GET /api/team/info/:regId`
+
+Retrieves team information for a specific user by their registration ID.
+
+**Parameters:**
+
+-   `regId`: The registration ID of the user.
+
+**Response:**
+
+```json
+{
+  "teamName": "The A-Team",
+  "teamId": "60d5f2b4a6d2f1a2b8c0d3e4",
+  "members": [
+    {
+      "_id": "60d5f2b4a6d2f1a2b8c0d3e5",
+      "name": "John Doe",
+      "regId": "24BCE0000",
+      "isLeader": true
+    }
+  ]
+}
+```
+
+---
+
+### 🙋 Get My Team Info
+
+`GET /api/team/me`
+
+Retrieves the team information for the currently authenticated user.
+
+**Response:**
+
+```json
+{
+  "teamName": "The A-Team",
+  "teamId": "60d5f2b4a6d2f1a2b8c0d3e4",
+  "leaderId": "60d5f2b4a6d2f1a2b8c0d3e5",
+  "members": [
+    {
+      "_id": "60d5f2b4a6d2f1a2b8c0d3e5",
+      "name": "John Doe",
+      "regId": "24BCE0000",
+      "isLeader": true
+    }
+  ],
+  "submissionLink": "https://github.com/example/project"
+}
+```
+
+---
+
+### 🔗 Update Submission Link *(Leader Only)*
+
+`PATCH /api/team/:id/submission`
+
+Updates the submission link for the team. This action can only be performed by the team leader.
+
+**Parameters:**
+
+-   `id`: The ID of the team.
+
+**Body:**
+
+```json
+{
+  "link": "https://github.com/example/updated-project"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Submission link updated"
+}
+```
 
 ---
 
 ## 🔧 Admin Routes
 
-> All admin routes require both `requireAuth` **and** `requireAdmin` middleware
+> All admin routes require both `protect` **and** `requireAdmin` middleware
 
 ### 📋 List All Users
 
@@ -211,9 +335,10 @@ Returns info for the team the given user belongs to.
 
 | Middleware      | Purpose                              |
 | --------------- | ------------------------------------ |
-| `requireAuth`   | Verifies JWT token & sets `req.user` |
+| `protect`   | Verifies JWT token & sets `req.user` |
 | `requireLeader` | Checks if `req.user.isLeader`        |
 | `requireAdmin`  | Checks if `req.user.isAdmin`         |
 
 ---
+
 
