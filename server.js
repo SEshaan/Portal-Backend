@@ -16,6 +16,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 80;
+app.use(express.json()); 
 
 
 
@@ -27,7 +28,6 @@ const apiLimiter = rateLimit({
 
 app.use("/api/", apiLimiter);
 
-app.use(express.json()); 
 app.use(cookieParser()); 
 
 
