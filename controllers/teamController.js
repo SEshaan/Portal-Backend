@@ -256,6 +256,7 @@ export const getTeamInfo = async (req, res) => {
   }
 };
 
+
 export const updateSubmission = async (req, res) => {
   const teamId = req.params.id;
   const { link } = req.body;
@@ -282,42 +283,3 @@ export const updateSubmission = async (req, res) => {
   }
 };
 
-export const getMyTeam = async (req, res) => {
-  const user = req.user;
-
-  try {
-    if (!user.teamId) {
-      return res.status(404).json({ message: "You are not in any team" });
-    }
-
-    const team = await Team.findById(user.teamId).populate(
-      "members",
-      "name regId isLeader"
-    );
-
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
-    }
-
-    const isMember = team.members.some(
-      (member) => member._id.toString() === user._id.toString()
-    );
-
-    if (!isMember) {
-      return res
-        .status(403)
-        .json({ message: "You are not authorized to access this team" });
-    }
-
-    res.status(200).json({
-      teamName: team.name,
-      teamId: team._id,
-      leaderId: team.leader,
-      members: team.members,
-      submissionLink: team.submissionLink,
-    });
-  } catch (err) {
-    console.error("getMyTeam error:", err.message);
-    res.status(500).json({ message: "Failed to fetch team info" });
-  }
-};

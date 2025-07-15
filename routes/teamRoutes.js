@@ -8,7 +8,6 @@ import {
   deleteTeam,
   getTeamInfo,
   updateSubmission,
-  getMyTeam
 } from "../controllers/teamController.js";
 import { requireLeader, protect } from "../middleware/authMiddleware.js";
 
@@ -23,9 +22,7 @@ router.post(
   requireLeader,
   transferLeadership
 );
+router.get("/info",protect, getTeamInfo);
 router.post("/delete", protect, requireLeader, deleteTeam);
-router.get("/info/:regId", protect, getTeamInfo);
-//accepts a regno. as a param and then it returns the
 router.patch("/:id/submission", protect, requireLeader, updateSubmission);
-router.get("/me",protect,getMyTeam);
 export default router;
