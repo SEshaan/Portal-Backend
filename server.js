@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://portal-frontend-chi.vercel.app/", // Connects to frontend
+    origin: "https://portal-frontend-chi.vercel.app", // Connects to frontend
     credentials: true,
   })
 );
