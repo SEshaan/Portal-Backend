@@ -25,9 +25,13 @@ const PORT = process.env.PORT || 80;
 // Middleware
 app.use(cookieParser());
 app.use(express.json());
+const allowedOrigins = [
+  "https://portal-frontend-chi.vercel.app",
+  "http://localhost:5173",
+];
 app.use(
   cors({
-    origin: "https://portal-frontend-chi.vercel.app", // Connects to frontend
+    origin: allowedOrigins,
     credentials: true,
   })
 );
